@@ -22,7 +22,7 @@ type FileWrapper struct {
 
 var preparedFiles = make([]models.FileEntity, 0)
 
-func (fw FileWrapper) FindFiles(currentDir string, extension models.Extension) {
+func (fw FileWrapper) FindFiles(currentDir string, extension string) {
 	files, err := ioutil.ReadDir(currentDir)
 	if err != nil {
 		log.Fatal(err)
