@@ -22,7 +22,21 @@ type FileWrapper struct {
 
 var preparedFiles = make([]models.FileEntity, 0)
 
-func (fw FileWrapper) FindFiles(currentDir string, extension string) {
+func (fw FileWrapper) GetParsingResult() (models.ParsingResult, error) {
+	wg := sync.WaitGroup{}
+	var res = models.ParsingResult{LineMap: map[string][]string{}, Mx: &sync.Mutex{}}
+	basePath, _ := filepath.Abs(fw.Config.Directory)
+	fw.findFiles(basePath, fw.Config.Extension)
+	for _, file := range preparedFiles {
+		wg.Add(1)
+		go fw.readFile(&wg, file.Path, &res, fw.Config.SearchText)
+	}
+	wg.Wait()
+	fw.Result = res
+	return fw.Result, nil
+}
+
+func (fw FileWrapper) findFiles(currentDir string, extension string) {
 	files, err := ioutil.ReadDir(currentDir)
 	if err != nil {
 		log.Fatal(err)
@@ -30,7 +44,7 @@ func (fw FileWrapper) FindFiles(currentDir string, extension string) {
 	for _, f := range files {
 		filePath := path.Join(currentDir, f.Name())
 		if f.IsDir() {
-			fw.FindFiles(filePath, extension)
+			fw.findFiles(filePath, extension)
 		} else {
 			if strings.Contains(f.Name(), string(extension)) {
 				preparedFiles = append(preparedFiles, models.FileEntity{Filename: f.Name(), Path: filePath})
@@ -39,7 +53,7 @@ func (fw FileWrapper) FindFiles(currentDir string, extension string) {
 	}
 }
 
-func (fw FileWrapper) ReadFile(wg *sync.WaitGroup, filePath string, res *models.ParsingResult, searchText string) {
+func (fw FileWrapper) readFile(wg *sync.WaitGroup, filePath string, res *models.ParsingResult, searchText string) {
 	defer wg.Done()
 	f, err := os.Open(filePath)
 
@@ -65,18 +79,4 @@ func (fw FileWrapper) ReadFile(wg *sync.WaitGroup, filePath string, res *models.
 	if err := scanner.Err(); err != nil {
 		fmt.Println(err)
 	}
-}
-
-func (fw FileWrapper) GetParsingResult() (models.ParsingResult, error) {
-	wg := sync.WaitGroup{}
-	var res = models.ParsingResult{LineMap: map[string][]string{}, Mx: &sync.Mutex{}}
-	basePath, _ := filepath.Abs(fw.Config.Directory)
-	fw.FindFiles(basePath, fw.Config.Extension)
-	for _, file := range preparedFiles {
-		wg.Add(1)
-		go fw.ReadFile(&wg, file.Path, &res, fw.Config.SearchText)
-	}
-	wg.Wait()
-	fw.Result = res
-	return fw.Result, nil
 }
