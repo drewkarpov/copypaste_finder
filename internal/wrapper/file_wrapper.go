@@ -28,12 +28,15 @@ func (fw FileWrapper) GetParsingResult() (models.ParsingResult, error) {
 	basePath, _ := filepath.Abs(fw.Config.Directory)
 	fw.findFiles(basePath, fw.Config.Extension)
 	for _, file := range preparedFiles {
+		filePath := file.Path
 		wg.Add(1)
-		go fw.readFile(&wg, file.Path, &res, fw.Config.SearchText)
+		go func() {
+			defer wg.Done()
+			fw.readFile(filePath, &res, fw.Config.SearchText)
+		}()
 	}
 	wg.Wait()
-	fw.Result = res
-	return fw.Result, nil
+	return res, nil
 }
 
 func (fw FileWrapper) findFiles(currentDir string, extension string) {
@@ -53,8 +56,7 @@ func (fw FileWrapper) findFiles(currentDir string, extension string) {
 	}
 }
 
-func (fw FileWrapper) readFile(wg *sync.WaitGroup, filePath string, res *models.ParsingResult, searchText string) {
-	defer wg.Done()
+func (fw FileWrapper) readFile(filePath string, res *models.ParsingResult, searchText string) {
 	f, err := os.Open(filePath)
 
 	if err != nil {
