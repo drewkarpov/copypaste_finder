@@ -66,7 +66,7 @@ func (fw FileWrapper) readFile(wg *sync.WaitGroup, filePath string, res *models.
 	for scanner.Scan() {
 		line := strings.Trim(scanner.Text(), " ")
 		if strings.Contains(line, searchText) {
-			fmt.Printf("finded line with %s: %s, line number : %v \n", searchText, line, lineNumber)
+			fmt.Printf("finded line with %s: '%s'\n,file path: %s line number : %v \n", searchText, line, filePath, lineNumber)
 			res.AddFindedValue(scanner.Text(), fmt.Sprintf("file: %s  line: %v", filePath, lineNumber))
 		}
 		lineNumber++
