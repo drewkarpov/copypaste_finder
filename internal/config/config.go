@@ -27,9 +27,6 @@ func (c Config) Init() Config {
 	if searchText == "" {
 		printNotFoundFlag("text")
 	}
-	if extension == "" {
-		printNotFoundFlag("ex")
-	}
 	return Config{Extension: fmt.Sprintf(".%s", extension), Directory: directory, SearchText: searchText}
 }
 
